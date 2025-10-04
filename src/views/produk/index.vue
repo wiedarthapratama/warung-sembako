@@ -17,6 +17,7 @@
                     <th class="border ">Harga Beli</th>
                     <th class="border ">Harga Beli/Unit</th>
                     <th class="border ">Harga Jual/Unit</th>
+                    <th class="border ">Harga Jual Real</th>
                     <th class="border ">Aksi</th>
                 </tr>
             </thead>
@@ -26,9 +27,10 @@
                     <td class="border ">{{ produk.nama }}</td>
                     <td class="border ">{{ produk.satuan }}</td>
                     <td class="border ">{{ produk.unit }}</td>
-                    <td class="border ">{{ produk.hargaBeli }}</td>
-                    <td class="border ">{{ produk.hargaBeliPerUnit }}</td>
-                    <td class="border ">{{ produk.hargaJualPerUnit }}</td>
+                    <td class="border ">{{ formatRupiah(produk.hargaBeli) }}</td>
+                    <td class="border ">{{ formatRupiah(produk.hargaBeliPerUnit) }}</td>
+                    <td class="border ">{{ formatRupiah(produk.hargaJualPerUnit) }}</td>
+                    <td class="border ">{{ formatRupiah(produk.hargaJualReal) }}</td>
                     <td class="border px-2 py-1 text-center">
                         <button @click="openForm(produk)"
                             class="px-2 py-1 text-white bg-blue-500 hover:bg-blue-600 rounded cursor-pointer">
@@ -103,4 +105,13 @@ const handleSaved = async () => {
 onMounted(() => {
     loadProduk();
 });
+
+const formatRupiah = (value: number | string) => {
+    if (!value) return "-";
+    return new Intl.NumberFormat("id-ID", {
+        style: "currency",
+        currency: "IDR",
+        minimumFractionDigits: 0,
+    }).format(Number(value));
+};
 </script>
