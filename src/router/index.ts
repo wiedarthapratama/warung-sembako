@@ -10,6 +10,7 @@ const routes = [
     path: '/',
     name: 'Welcome',
     component: Welcome,
+    meta: { title: 'Home' },
   },
   {
     path: '/produk-view',
@@ -20,6 +21,7 @@ const routes = [
     path: '/produk',
     name: 'Produk',
     component: ProdukIndex,
+    meta: { title: 'Produk' },
   },
 ]
 

@@ -1,37 +1,59 @@
 <template>
-  <div class="min-h-screen bg-gray-100">
-    <!-- Navbar -->
-    <nav class="bg-blue-600 text-white p-4 shadow">
-      <div class="container mx-auto flex justify-between">
-        <h1 class="font-bold">Warung Sembako</h1>
-        <ul class="flex gap-4">
-          <li>
-            <RouterLink to="/" class="hover:underline" active-class="font-bold underline">
-              Home
-            </RouterLink>
-          </li>
-          <li>
-            <RouterLink to="/produk-view" class="hover:underline" active-class="font-bold underline">
-              Produk View
-            </RouterLink>
-          </li>
-          <li>
-            <RouterLink to="/produk" class="hover:underline" active-class="font-bold underline">
-              Produk
-            </RouterLink>
-          </li>
-        </ul>
+  <div class="app-shell">
+    <div v-if="sidebarOpen" class="sidebar-backdrop" @click="sidebarOpen = false"></div>
+
+    <aside class="sidebar" :class="{ 'sidebar-open': sidebarOpen }">
+      <div class="brand">
+        <div class="brand-mark">WS</div>
+        <div>
+          <strong>Warung Sembako</strong>
+          <span>Admin Panel</span>
+        </div>
       </div>
-    </nav>
 
+      <nav class="sidebar-nav" aria-label="Navigasi utama">
+        <p class="nav-label">MENU UTAMA</p>
+        <RouterLink to="/" class="nav-link" active-class="nav-link-active" @click="sidebarOpen = false">
+          <span class="nav-icon">⌂</span>
+          <span>Home</span>
+        </RouterLink>
+        <RouterLink to="/produk" class="nav-link" active-class="nav-link-active" @click="sidebarOpen = false">
+          <span class="nav-icon">▦</span>
+          <span>Produk</span>
+        </RouterLink>
+      </nav>
 
-    <!-- Content -->
-    <main class="container mx-auto p-6">
-      <RouterView />
-    </main>
+      <div class="sidebar-footer">
+        <span class="status-dot"></span>
+        Sistem aktif
+      </div>
+    </aside>
+
+    <div class="main-area">
+      <header class="topbar">
+        <button class="menu-button" type="button" aria-label="Buka menu" @click="sidebarOpen = !sidebarOpen">☰</button>
+        <div class="breadcrumb">
+          <span>Warung Sembako</span>
+          <b>/</b>
+          <strong>{{ route.meta.title || 'Home' }}</strong>
+        </div>
+        <div class="profile-chip">
+          <span class="profile-avatar">A</span>
+          <span class="profile-name">Administrator</span>
+        </div>
+      </header>
+
+      <main class="content-area">
+        <RouterView />
+      </main>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { RouterView, RouterLink } from "vue-router";
+import { ref } from 'vue'
+import { RouterLink, RouterView, useRoute } from 'vue-router'
+
+const route = useRoute()
+const sidebarOpen = ref(false)
 </script>
