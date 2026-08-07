@@ -1,235 +1,42 @@
 <template>
-    <div class="fixed inset-0 bg-gray-200 bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative animate-fadeIn">
-            <!-- Header -->
-            <div class="flex justify-between items-center border-b pb-2 mb-4">
-                <h2 class="text-lg font-bold">
-                    {{ editData ? "Edit Produk" : "Tambah Produk" }}
-                </h2>
-                <button @click="$emit('close')" class="text-gray-500 hover:text-black text-xl font-bold cursor-pointer">
-                    ×
-                </button>
-            </div>
-
-            <!-- Form -->
-            <form @submit.prevent="saveProduk" class="grid gap-3">
-                <label for="">Kategori</label>
-                <input v-model="form.kategori" placeholder="Kategori" class="input" />
-                <label for="">Nama Produk</label>
-                <input v-model="form.nama" placeholder="Nama Produk" class="input" />
-                <label for="">Satuan</label>
-                <input v-model="form.satuan" placeholder="Satuan" class="input" />
-                <label for="">Unit</label>
-                <input v-model="form.unit" type="number" placeholder="Unit" class="input" />
-                <label for="">Harga Beli</label>
-                <input :value="formatCurrency(form.hargaBeli)" @input="updateNumber('hargaBeli', $event)" type="text"
-                    placeholder="Harga Beli" class="input" />
-                <label for="">Harga Beli per Unit</label>
-                <input :value="formatCurrency(form.hargaBeliPerUnit)" type="text" disabled class="input" />
-                <label for="">Harga Jual per Unit</label>
-                <input :value="formatCurrency(form.hargaJualPerUnit)" type="text" disabled class="input" />
-                <label for="">Harga Jual</label>
-                <input :value="formatCurrency(form.hargaJualReal)" @input="updateNumber('hargaJualReal', $event)"
-                    type="text" class="input" />
-                <label for="">Barcode</label>
-                <div class="flex gap-2">
-                    <input v-model="form.barcode" type="text" placeholder="Scan / input barcode" class="input flex-1" />
-                    <button type="button" @click="startScanner" class="bg-green-500 text-white px-3 rounded">📷</button>
-                </div>
-
-                <!-- Modal atau area kamera -->
-                <div v-if="showScanner" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center">
-                    <div class="bg-white p-4 rounded-lg">
-                        <h3 class="font-semibold mb-2">Arahkan barcode ke kamera</h3>
-                        <video ref="videoRef" class="border w-72 h-48"></video>
-                        <div class="mt-2 flex justify-end">
-                            <button @click="stopScanner" class="bg-red-500 text-white px-3 py-1 rounded">Tutup</button>
-                        </div>
-                    </div>
-                </div>
-
-
-
-                <button type="submit" :disabled="loading"
-                    class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition disabled:opacity-50 cursor-pointer">
-                    <span v-if="loading">⏳ Menyimpan...</span>
-                    <span v-else>{{ editData ? "Update" : "Tambah" }} Produk</span>
-                </button>
-            </form>
-        </div>
-    </div>
+  <div class="modal-backdrop" @click.self="$emit('close')">
+    <section class="product-modal" role="dialog" aria-modal="true" aria-labelledby="product-modal-title">
+      <header class="modal-header"><div><p class="eyebrow">MASTER DATA</p><h2 id="product-modal-title">{{ editData ? 'Edit Produk' : 'Tambah Produk' }}</h2><p>Lengkapi informasi produk di bawah ini.</p></div><button class="modal-close" type="button" aria-label="Tutup" @click="$emit('close')">×</button></header>
+      <form class="modal-form" @submit.prevent="saveProduk">
+        <div class="form-section"><h3>Informasi Produk</h3><div class="form-grid"><label class="field field-wide"><span>Nama Produk</span><input v-model="form.nama" required placeholder="Contoh: Beras Premium 5kg" /></label><label class="field"><span>Kategori</span><input v-model="form.kategori" placeholder="Contoh: Sembako" /></label><label class="field"><span>Satuan</span><input v-model="form.satuan" placeholder="pcs, kg, liter" /></label><label class="field"><span>Jumlah Unit</span><input v-model.number="form.unit" min="1" type="number" /></label><label class="field field-wide"><span>Barcode</span><div class="input-with-action"><input v-model="form.barcode" placeholder="Scan atau input barcode" /><button type="button" class="scan-button" @click="startScanner">Scan</button></div></label></div></div>
+        <div class="form-section"><h3>Harga Produk</h3><div class="form-grid"><label class="field"><span>Total Harga Beli</span><input :value="formatCurrency(form.hargaBeli)" inputmode="numeric" @input="updateNumber('hargaBeli', $event)" /></label><label class="field"><span>Harga Jual</span><input :value="formatCurrency(form.hargaJualReal)" inputmode="numeric" @input="updateNumber('hargaJualReal', $event)" /></label><label class="field"><span>Harga Beli / Unit</span><input :value="formatCurrency(form.hargaBeliPerUnit)" disabled /></label><label class="field"><span>Harga Jual / Unit</span><input :value="formatCurrency(form.hargaJualPerUnit)" disabled /></label></div></div>
+        <div v-if="showScanner" class="scanner-overlay"><div class="scanner-card"><h3>Scan Barcode</h3><p>Arahkan kamera ke barcode produk.</p><video ref="videoRef"></video><button type="button" class="button button-secondary" @click="stopScanner">Tutup Kamera</button></div></div>
+        <footer class="modal-footer"><button class="button button-secondary" type="button" @click="$emit('close')">Batal</button><button class="button button-primary" type="submit" :disabled="loading">{{ loading ? 'Menyimpan...' : editData ? 'Simpan Perubahan' : 'Tambah Produk' }}</button></footer>
+      </form>
+    </section>
+  </div>
 </template>
 
-<style scoped>
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.animate-fadeIn {
-    animation: fadeIn 0.3s ease-out;
-}
-
-.fixed.inset-0 video {
-    position: relative;
-    z-index: 1;
-}
-
-.fixed.inset-0 button.bg-red-500 {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    z-index: 2;
-}
-</style>
-
-
 <script setup lang="ts">
-import { ref, watch, onMounted } from "vue";
-import { db } from "@/firebase";
-import { collection, addDoc, updateDoc, doc } from "firebase/firestore";
+import { onMounted, ref, watch } from 'vue'
+import { addDoc, collection, doc, updateDoc } from 'firebase/firestore'
+import { BrowserMultiFormatReader } from '@zxing/browser'
+import { db } from '@/firebase'
 
-const props = defineProps<{ editData?: any }>();
-const emit = defineEmits(["close", "saved"]);
+const props = defineProps<{ editData?: any }>()
+const emit = defineEmits(['close', 'saved'])
+const form = ref({ kategori: '', nama: '', satuan: '', unit: 1, hargaBeli: 0, hargaBeliPerUnit: 0, hargaJualPerUnit: 0, hargaJualReal: 0, barcode: '' })
+const loading = ref(false)
+const showScanner = ref(false)
+const videoRef = ref<HTMLVideoElement | null>(null)
+let codeReader: BrowserMultiFormatReader | null = null
 
-const form = ref({
-    kategori: "",
-    nama: "",
-    satuan: "",
-    unit: 1,
-    hargaBeli: 0,
-    hargaBeliPerUnit: 0,
-    hargaJualPerUnit: 0,
-    hargaJualReal: 0,
-    barcode: "",
-});
-
-const loading = ref(false);
-
-const produkCol = collection(db, "produk");
-
-// Auto hitung harga per unit + margin
-watch([() => form.value.hargaBeli, () => form.value.unit], () => {
-    if (form.value.unit > 0) {
-        form.value.hargaBeliPerUnit = Math.round(form.value.hargaBeli / form.value.unit);
-        form.value.hargaJualPerUnit = Math.round(form.value.hargaBeliPerUnit * 1.15);
-    }
-});
-
-const saveProduk = async () => {
-    if (!form.value.nama) return;
-
-    loading.value = true;
-    try {
-        if (props.editData?.id) {
-            const refDoc = doc(db, "produk", props.editData.id);
-            await updateDoc(refDoc, { ...form.value });
-        } else {
-            await addDoc(produkCol, { ...form.value });
-        }
-        emit("saved");
-        emit("close");
-    } catch (err) {
-        console.error("Error simpan produk:", err);
-    } finally {
-        loading.value = false;
-    }
-};
-
-onMounted(() => {
-    if (props.editData) {
-        form.value = { ...props.editData };
-    }
-});
-
-
-// ✅ Fungsi format dan parse angka
-const formatCurrency = (value: number) => {
-    if (!value) return "";
-    return new Intl.NumberFormat("id-ID", {
-        style: "currency",
-        currency: "IDR",
-        minimumFractionDigits: 0,
-    }).format(value);
-};
-
-const updateNumber = (field: string, e: Event) => {
-    const raw = (e.target as HTMLInputElement).value.replace(/[^\d]/g, ""); // hapus non-digit
-    form.value[field] = raw ? parseInt(raw) : 0;
-};
-
-import { BrowserMultiFormatReader } from "@zxing/browser";
-import { ref } from "vue";
-
-let codeReader: BrowserMultiFormatReader | null = null;
-const showScanner = ref(false);
-const videoRef = ref<HTMLVideoElement | null>(null);
-let activeStream: MediaStream | null = null;
-
-const startScanner = async () => {
-    showScanner.value = true;
-    codeReader = new BrowserMultiFormatReader();
-
-    try {
-        // Minta izin kamera dulu
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        stream.getTracks().forEach(track => track.stop()); // hanya untuk izin
-
-        const devices = await BrowserMultiFormatReader.listVideoInputDevices();
-        if (devices.length === 0) {
-            alert("Kamera tidak ditemukan. Pastikan izin kamera diizinkan di browser.");
-            showScanner.value = false;
-            return;
-        }
-
-        const selectedDeviceId = devices[0].deviceId;
-
-        if (videoRef.value) {
-            // Jalankan scanner
-            codeReader.decodeFromVideoDevice(selectedDeviceId, videoRef.value, (result, err, controls) => {
-                if (result) {
-                    form.value.barcode = result.getText();
-                    // Simpan stream aktif untuk dimatikan nanti
-                    activeStream = videoRef.value?.srcObject as MediaStream;
-                    stopScanner();
-                }
-            });
-        }
-    } catch (err) {
-        console.error("Error starting scanner:", err);
-        alert("Gagal mengakses kamera. Pastikan sudah mengizinkan akses kamera.");
-        showScanner.value = false;
-    }
-};
-
+watch([() => form.value.hargaBeli, () => form.value.unit], () => { form.value.hargaBeliPerUnit = form.value.unit > 0 ? Math.round(form.value.hargaBeli / form.value.unit) : 0; form.value.hargaJualPerUnit = Math.round(form.value.hargaBeliPerUnit * 1.15) })
+const saveProduk = async () => { loading.value = true; try { const data = { ...form.value }; if (props.editData?.id) await updateDoc(doc(db, 'produk', props.editData.id), data); else await addDoc(collection(db, 'produk'), data); emit('saved'); emit('close') } finally { loading.value = false } }
+const formatCurrency = (value: number) => value ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(value) : ''
+type NumericField = 'hargaBeli' | 'hargaJualReal'
+const updateNumber = (field: NumericField, event: Event) => { const raw = (event.target as HTMLInputElement).value.replace(/[^\d]/g, ''); form.value[field] = raw ? Number(raw) : 0 }
+const startScanner = async () => { showScanner.value = true; codeReader = new BrowserMultiFormatReader(); try { const devices = await BrowserMultiFormatReader.listVideoInputDevices(); if (devices[0] && videoRef.value) codeReader.decodeFromVideoDevice(devices[0].deviceId, videoRef.value, (result) => { if (result) { form.value.barcode = result.getText(); stopScanner() } }) } catch { showScanner.value = false; window.alert('Kamera tidak dapat diakses.') } }
 const stopScanner = () => {
-    // hentikan pemindaian (ZXing versi baru pakai controls.stop())
-    if (videoRef.value && videoRef.value.srcObject) {
-        const stream = videoRef.value.srcObject as MediaStream;
-        stream.getTracks().forEach(track => track.stop());
-        videoRef.value.srcObject = null;
-    }
-
-    // Pastikan kamera dimatikan
-    if (activeStream) {
-        activeStream.getTracks().forEach(track => track.stop());
-        activeStream = null;
-    }
-
-    showScanner.value = false;
-};
-
-</script>
-
-<style scoped>
-.input {
-    @apply border w-full;
+  const stream = videoRef.value?.srcObject as MediaStream | null
+  stream?.getTracks().forEach((track) => track.stop())
+  if (videoRef.value) videoRef.value.srcObject = null
+  showScanner.value = false
 }
-</style>
+onMounted(() => { if (props.editData) form.value = { ...form.value, ...props.editData } })
+</script>

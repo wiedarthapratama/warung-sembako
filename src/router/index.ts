@@ -10,11 +10,7 @@ const routes = [
     path: '/',
     name: 'Welcome',
     component: Welcome,
-  },
-  {
-    path: '/warung-sembako',
-    name: 'Welcome',
-    component: Welcome,
+    meta: { title: 'Home' },
   },
   {
     path: '/produk-view',
@@ -25,11 +21,12 @@ const routes = [
     path: '/produk',
     name: 'Produk',
     component: ProdukIndex,
+    meta: { title: 'Produk' },
   },
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes,
 })
 
