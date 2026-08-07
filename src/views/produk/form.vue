@@ -160,13 +160,14 @@ const formatCurrency = (value: number) => {
     }).format(value);
 };
 
-const updateNumber = (field: string, e: Event) => {
+type NumericField = "hargaBeli" | "hargaJualReal";
+
+const updateNumber = (field: NumericField, e: Event) => {
     const raw = (e.target as HTMLInputElement).value.replace(/[^\d]/g, ""); // hapus non-digit
     form.value[field] = raw ? parseInt(raw) : 0;
 };
 
 import { BrowserMultiFormatReader } from "@zxing/browser";
-import { ref } from "vue";
 
 let codeReader: BrowserMultiFormatReader | null = null;
 const showScanner = ref(false);

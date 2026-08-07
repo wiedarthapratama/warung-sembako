@@ -6,12 +6,14 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
-export default defineConfig({
-  base: '/warung-sembako/',
+export default defineConfig(({ mode }) => ({
+  // GitHub Pages serves this project from /warung-sembako/, while the Vite
+  // preview runs at the domain root during development.
+  base: mode === 'production' ? '/warung-sembako/' : '/',
   plugins: [vue(), vueDevTools(), tailwindcss()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
-})
+}))
