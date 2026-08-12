@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 // Views
 import Welcome from '@/views/Welcome.vue'
+import ScanView from '@/views/ScanView.vue'
 import ProdukView from '@/views/ProdukView.vue'
 import ProdukIndex from '@/views/produk/index.vue'
 
@@ -11,6 +12,12 @@ const routes = [
     name: 'Welcome',
     component: Welcome,
     meta: { title: 'Home' },
+  },
+  {
+    path: '/scan',
+    name: 'Scan',
+    component: ScanView,
+    meta: { title: 'Scan' },
   },
   {
     path: '/produk-view',

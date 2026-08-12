@@ -17,6 +17,10 @@
           <span class="nav-icon">⌂</span>
           <span>Home</span>
         </RouterLink>
+        <RouterLink to="/scan" class="nav-link" active-class="nav-link-active" @click="sidebarOpen = false">
+          <span class="nav-icon">⌕</span>
+          <span>Scan</span>
+        </RouterLink>
         <RouterLink to="/produk" class="nav-link" active-class="nav-link-active" @click="sidebarOpen = false">
           <span class="nav-icon">▦</span>
           <span>Produk</span>

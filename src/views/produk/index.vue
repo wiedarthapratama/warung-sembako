@@ -14,10 +14,16 @@
       <div v-else-if="!filteredProducts.length" class="table-state"><strong>Belum ada produk</strong><span>Tambahkan produk pertama untuk memulai katalog.</span><button class="button button-primary" @click="openForm()">Tambah Produk</button></div>
       <div v-else class="table-wrap">
         <table class="data-table">
-          <thead><tr><th>Produk</th><th>Kategori</th><th>Stok</th><th>Harga Beli</th><th>Harga Jual</th><th class="action-heading">Aksi</th></tr></thead>
+          <thead><tr><th>Produk</th><th>Barcode</th><th>Kategori</th><th>Stok</th><th>Harga Beli</th><th>Harga Jual</th><th class="action-heading">Aksi</th></tr></thead>
           <tbody>
             <tr v-for="produk in filteredProducts" :key="produk.id">
-              <td><div class="product-name"><span class="product-avatar">{{ (produk.nama || '?').charAt(0).toUpperCase() }}</span><div><strong>{{ produk.nama || '-' }}</strong><small>{{ produk.barcode || 'Tanpa barcode' }}</small></div></div></td>
+              <td><div class="product-name"><span class="product-avatar">{{ (produk.nama || '?').charAt(0).toUpperCase() }}</span><div><strong>{{ produk.nama || '-' }}</strong><small>{{ produk.kategori || 'Umum' }}</small></div></div></td>
+              <td>
+                <div class="barcode-cell">
+                  <div class="barcode-label">{{ produk.barcode || 'Tanpa barcode' }}</div>
+                  <button class="button button-secondary" type="button" @click="generateBarcode(produk)">Unduh Barcode</button>
+                </div>
+              </td>
               <td><span class="category-badge">{{ produk.kategori || 'Umum' }}</span></td>
               <td><span :class="['stock-badge', Number(produk.unit) <= 5 ? 'stock-low' : 'stock-ok']">{{ produk.unit || 0 }} {{ produk.satuan || 'unit' }}</span></td>
               <td>{{ formatRupiah(produk.hargaBeli) }}</td><td class="price-cell">{{ formatRupiah(produk.hargaJualReal || produk.hargaJualPerUnit) }}</td>
@@ -25,6 +31,7 @@
             </tr>
           </tbody>
         </table>
+        <canvas ref="barcodeCanvas" style="display:none"></canvas>
       </div>
     </section>
 
@@ -36,10 +43,12 @@
 import { computed, onMounted, ref } from 'vue'
 import { collection, deleteDoc, doc, getDocs } from 'firebase/firestore'
 import Swal from 'sweetalert2'
+import JsBarcode from 'jsbarcode'
 import { db } from '@/firebase'
 import FormProduk from './form.vue'
 
 const produkList = ref<any[]>([])
+const barcodeCanvas = ref<HTMLCanvasElement | null>(null)
 const showForm = ref(false)
 const editData = ref<any | null>(null)
 const searchQuery = ref('')
@@ -70,6 +79,32 @@ const deleteProduk = async (id: string) => {
 const openForm = (product: any | null = null) => { editData.value = product; showForm.value = true }
 const closeForm = () => { showForm.value = false; editData.value = null }
 const handleSaved = async () => { await loadProduk(); await Swal.fire({ title: 'Tersimpan', text: 'Data produk berhasil disimpan.', icon: 'success', timer: 1600, showConfirmButton: false }) }
+
+const generateBarcode = (produk: any) => {
+  if (!produk.barcode) {
+    Swal.fire({ title: 'Barcode belum tersedia', text: 'Produk ini belum memiliki barcode.', icon: 'warning', confirmButtonColor: '#2563eb' })
+    return
+  }
+  if (!barcodeCanvas.value) return
+
+  try {
+    JsBarcode(barcodeCanvas.value, produk.barcode, {
+      format: 'CODE128',
+      displayValue: true,
+      fontSize: 14,
+      height: 70,
+      margin: 10,
+    })
+    const dataUrl = barcodeCanvas.value.toDataURL('image/png')
+    const link = document.createElement('a')
+    link.href = dataUrl
+    link.download = `${produk.nama || 'barcode'}-${produk.barcode}.png`
+    link.click()
+  } catch (error) {
+    Swal.fire({ title: 'Gagal membuat barcode', text: 'Coba lagi nanti.', icon: 'error', confirmButtonColor: '#2563eb' })
+  }
+}
+
 const formatRupiah = (value: number | string) => value ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(value)) : '-'
 onMounted(loadProduk)
 </script>
