@@ -9,7 +9,7 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig(({ mode }) => ({
   // GitHub Pages serves this project from /warung-sembako/, while the Vite
   // preview runs at the domain root during development.
-  base: mode === 'production' ? '/warung-sembako/' : '/',
+  base: '/',
   plugins: [vue(), vueDevTools(), tailwindcss()],
   resolve: {
     alias: {
