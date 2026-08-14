@@ -45,6 +45,7 @@ import { collection, deleteDoc, doc, getDocs } from 'firebase/firestore'
 import Swal from 'sweetalert2'
 import JsBarcode from 'jsbarcode'
 import { db } from '@/firebase'
+import { authState } from '@/auth'
 import FormProduk from './form.vue'
 
 const produkList = ref<any[]>([])
@@ -63,7 +64,8 @@ const filteredProducts = computed(() => {
 const loadProduk = async () => {
   loading.value = true
   try {
-    const snapshot = await getDocs(collection(db, 'produk'))
+    if (!authState.warungId) return
+    const snapshot = await getDocs(collection(db, 'warungs', authState.warungId, 'produk'))
     produkList.value = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))
   } finally { loading.value = false }
 }
@@ -71,7 +73,8 @@ const loadProduk = async () => {
 const deleteProduk = async (id: string) => {
   const result = await Swal.fire({ title: 'Hapus produk ini?', text: 'Data yang dihapus tidak dapat dikembalikan.', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, hapus', cancelButtonText: 'Batal', confirmButtonColor: '#dc2626', reverseButtons: true })
   if (!result.isConfirmed) return
-  await deleteDoc(doc(db, 'produk', id))
+  if (!authState.warungId) return
+  await deleteDoc(doc(db, 'warungs', authState.warungId, 'produk', id))
   await loadProduk()
   await Swal.fire({ title: 'Produk dihapus', text: 'Produk berhasil dihapus dari katalog.', icon: 'success', confirmButtonColor: '#2563eb' })
 }

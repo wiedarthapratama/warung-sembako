@@ -1,5 +1,6 @@
 <template>
-  <div class="app-shell">
+  <RouterView v-if="route.meta.public" />
+  <div v-else class="app-shell">
     <div v-if="sidebarOpen" class="sidebar-backdrop" @click="sidebarOpen = false"></div>
 
     <aside class="sidebar" :class="{ 'sidebar-open': sidebarOpen }">
@@ -42,8 +43,9 @@
           <strong>{{ route.meta.title || 'Home' }}</strong>
         </div>
         <div class="profile-chip">
-          <span class="profile-avatar">A</span>
-          <span class="profile-name">Administrator</span>
+          <span class="profile-avatar">{{ (authState.user?.email || 'A').charAt(0).toUpperCase() }}</span>
+          <span class="profile-name">{{ authState.user?.email || 'Administrator' }}</span>
+          <button class="logout-button" type="button" @click="logout">Keluar</button>
         </div>
       </header>
 
@@ -56,8 +58,13 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { RouterLink, RouterView, useRoute } from 'vue-router'
+import { signOut } from 'firebase/auth'
+import { auth } from '@/firebase'
+import { authState } from '@/auth'
+import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
+const router = useRouter()
 const sidebarOpen = ref(false)
+const logout = async () => { await signOut(auth); await router.push('/login') }
 </script>

@@ -17,6 +17,7 @@ import { onMounted, ref, watch } from 'vue'
 import { addDoc, collection, doc, updateDoc } from 'firebase/firestore'
 import { BrowserMultiFormatReader } from '@zxing/browser'
 import { db } from '@/firebase'
+import { authState } from '@/auth'
 
 const props = defineProps<{ editData?: any }>()
 const emit = defineEmits(['close', 'saved'])
@@ -27,7 +28,7 @@ const videoRef = ref<HTMLVideoElement | null>(null)
 let codeReader: BrowserMultiFormatReader | null = null
 
 watch([() => form.value.hargaBeli, () => form.value.unit], () => { form.value.hargaBeliPerUnit = form.value.unit > 0 ? Math.round(form.value.hargaBeli / form.value.unit) : 0; form.value.hargaJualPerUnit = Math.round(form.value.hargaBeliPerUnit * 1.15) })
-const saveProduk = async () => { loading.value = true; try { const data = { ...form.value }; if (props.editData?.id) await updateDoc(doc(db, 'produk', props.editData.id), data); else await addDoc(collection(db, 'produk'), data); emit('saved'); emit('close') } finally { loading.value = false } }
+const saveProduk = async () => { loading.value = true; try { if (!authState.warungId) throw new Error('Sesi warung tidak ditemukan'); const produkCollection = collection(db, 'warungs', authState.warungId, 'produk'); const data = { ...form.value }; if (props.editData?.id) await updateDoc(doc(produkCollection, props.editData.id), data); else await addDoc(produkCollection, data); emit('saved'); emit('close') } finally { loading.value = false } }
 const formatCurrency = (value: number) => value ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(value) : ''
 type NumericField = 'hargaBeli' | 'hargaJualReal'
 const updateNumber = (field: NumericField, event: Event) => { const raw = (event.target as HTMLInputElement).value.replace(/[^\d]/g, ''); form.value[field] = raw ? Number(raw) : 0 }

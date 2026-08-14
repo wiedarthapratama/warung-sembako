@@ -50,13 +50,15 @@ import { onMounted, ref } from 'vue'
 import { collection, getDocs } from 'firebase/firestore'
 import { RouterLink } from 'vue-router'
 import { db } from '@/firebase'
+import { authState } from '@/auth'
 
 const totalProduk = ref(0)
 const totalNilai = ref(0)
 const stokTerbatas = ref(0)
 
 const loadSummary = async () => {
-  const snapshot = await getDocs(collection(db, 'produk'))
+  if (!authState.warungId) return
+  const snapshot = await getDocs(collection(db, 'warungs', authState.warungId, 'produk'))
   const products = snapshot.docs.map((item) => item.data())
   totalProduk.value = products.length
   totalNilai.value = products.reduce((sum, item) => sum + Number(item.hargaJualReal || item.hargaJualPerUnit || 0), 0)
