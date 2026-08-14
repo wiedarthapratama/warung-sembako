@@ -90,16 +90,8 @@ const profileMenuOpen = ref(false)
 
 const openWarungProfile = async () => {
   sidebarOpen.value = false
-
-  if (route.path !== '/') {
-    await router.push('/')
-    setTimeout(() => {
-      document.getElementById('profil-warung')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }, 150)
-    return
-  }
-
-  document.getElementById('profil-warung')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  profileMenuOpen.value = false
+  if (route.path !== '/profil-warung') await router.push('/profil-warung')
 }
 
 const logout = async () => { await signOut(auth); await router.push('/login') }
