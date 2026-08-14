@@ -3,15 +3,20 @@ import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyB0F7Z65MFfIhht2QyuShiLDE6mdwlnvYA',
-  authDomain: 'warung-sembako-ffa06.firebaseapp.com',
-  projectId: 'warung-sembako-ffa06',
-  storageBucket: 'warung-sembako-ffa06.appspot.com',
-  messagingSenderId: '752684471991',
-  appId: '1:752684471991:web:99c8e001e12ee15df79f32',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || '',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
 }
 
-// Init Firebase
+const hasFirebaseConfig = Object.values(firebaseConfig).every(Boolean)
+
+if (!hasFirebaseConfig) {
+  console.error('Firebase configuration is missing. Please set the VITE_FIREBASE_* values in your .env file or the Firebase web config in src/firebase.ts.')
+}
+
 const app = initializeApp(firebaseConfig)
 
 export const auth = getAuth(app)

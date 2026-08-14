@@ -34,18 +34,35 @@ const toggleMode = () => { isRegister.value = !isRegister.value; errorMessage.va
 const submit = async () => {
   loading.value = true
   errorMessage.value = ''
+
   try {
     if (isRegister.value) {
+      if (!namaWarung.value.trim()) {
+        throw { code: 'validation/name-required', message: 'Nama warung wajib diisi.' }
+      }
+
       const result = await createUserWithEmailAndPassword(auth, email.value, password.value)
-      await createUserProfile(result.user, namaWarung.value)
+      await createUserProfile(result.user, namaWarung.value.trim())
     } else {
       const result = await signInWithEmailAndPassword(auth, email.value, password.value)
       await refreshAuthState(result.user)
     }
+
     await router.replace('/')
   } catch (error: any) {
-    const messages: Record<string, string> = { 'auth/email-already-in-use': 'Email sudah digunakan.', 'auth/invalid-credential': 'Email atau password salah.', 'auth/weak-password': 'Password minimal 6 karakter.' }
-    errorMessage.value = messages[error?.code] || 'Terjadi kesalahan. Silakan coba lagi.'
+    const messages: Record<string, string> = {
+      'validation/name-required': 'Nama warung wajib diisi.',
+      'auth/email-already-in-use': 'Email sudah digunakan.',
+      'auth/invalid-credential': 'Email atau password salah.',
+      'auth/weak-password': 'Password minimal 6 karakter.',
+      'auth/network-request-failed': 'Koneksi internet bermasalah. Coba lagi.',
+      'auth/operation-not-allowed': 'Login email/password belum diaktifkan di Firebase.',
+      'permission-denied': 'Akses database ditolak. Harap publish aturan Firestore dan pastikan pengguna login sudah aktif.',
+      'firestore/permission-denied': 'Akses database ditolak. Harap publish aturan Firestore dan pastikan pengguna login sudah aktif.'
+    }
+
+    console.error('Auth error:', error)
+    errorMessage.value = messages[error?.code] || error?.message || 'Terjadi kesalahan. Silakan coba lagi.'
   } finally { loading.value = false }
 }
 </script>

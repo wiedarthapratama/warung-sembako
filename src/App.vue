@@ -18,6 +18,10 @@
           <span class="nav-icon">⌂</span>
           <span>Home</span>
         </RouterLink>
+        <button class="nav-link nav-link-button" type="button" @click="openWarungProfile">
+          <span class="nav-icon">⚙</span>
+          <span>Profil Warung</span>
+        </button>
         <RouterLink to="/scan" class="nav-link" active-class="nav-link-active" @click="sidebarOpen = false">
           <span class="nav-icon">⌕</span>
           <span>Scan</span>
@@ -66,5 +70,20 @@ import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 const route = useRoute()
 const router = useRouter()
 const sidebarOpen = ref(false)
+
+const openWarungProfile = async () => {
+  sidebarOpen.value = false
+
+  if (route.path !== '/') {
+    await router.push('/')
+    setTimeout(() => {
+      document.getElementById('profil-warung')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 150)
+    return
+  }
+
+  document.getElementById('profil-warung')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
 const logout = async () => { await signOut(auth); await router.push('/login') }
 </script>
