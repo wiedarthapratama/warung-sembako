@@ -24,14 +24,23 @@
       </div>
 
       <section class="panel info-panel profile-editor-card">
-        <div class="panel-header"><div><h2>Informasi Warung</h2><p>Pastikan data warung selalu terbaru.</p></div></div>
+        <div class="profile-editor-heading">
+          <div class="editor-heading-icon">⌘</div>
+          <div><p class="editor-kicker">DETAIL WARUNG</p><h2>Informasi Warung</h2><p>Perbarui identitas warung agar selalu terlihat profesional.</p></div>
+        </div>
         <form class="profile-form" @submit.prevent="saveProfile">
-          <label class="field"><span>Nama Warung</span><input v-model="warungForm.nama" type="text" required placeholder="Contoh: Warung Berkah" /></label>
-          <label class="field"><span>Alamat</span><textarea v-model="warungForm.alamat" rows="4" placeholder="Alamat lengkap warung" /></label>
-          <label class="field"><span>Foto Warung</span><input ref="photoInput" type="file" accept="image/png,image/jpeg,image/webp" @change="handlePhotoUpload" /><small class="field-help">JPG, PNG, atau WebP. Maksimal 1 MB.</small></label>
-          <div v-if="uploadMessage" class="upload-message">{{ uploadMessage }}</div>
+          <div class="profile-form-section">
+            <p class="form-section-label">Identitas utama</p>
+            <label class="field"><span>Nama Warung</span><input v-model="warungForm.nama" type="text" required placeholder="Contoh: Warung Berkah" /></label>
+            <label class="field"><span>Alamat Warung</span><textarea v-model="warungForm.alamat" rows="4" placeholder="Tulis alamat lengkap warung" /><small class="field-help">Alamat ini akan digunakan untuk mengenali lokasi warung Anda.</small></label>
+          </div>
+          <div class="profile-form-section">
+            <p class="form-section-label">Foto profil</p>
+            <label class="upload-box"><span class="upload-icon">↑</span><span><strong>Unggah foto warung</strong><small>Pilih JPG, PNG, atau WebP hingga 1 MB</small></span><input ref="photoInput" type="file" accept="image/png,image/jpeg,image/webp" @change="handlePhotoUpload" /></label>
+            <div v-if="uploadMessage" class="upload-message">{{ uploadMessage }}</div>
+          </div>
           <p v-if="profileMessage" :class="['profile-message', profileStatus]">{{ profileMessage }}</p>
-          <button class="button button-primary" type="submit" :disabled="savingProfile">{{ savingProfile ? 'Menyimpan...' : 'Simpan Perubahan' }}</button>
+          <div class="profile-form-footer"><span class="save-hint">Perubahan tersimpan ke profil warung Anda.</span><button class="button button-primary" type="submit" :disabled="savingProfile">{{ savingProfile ? 'Menyimpan...' : 'Simpan Perubahan' }}</button></div>
         </form>
       </section>
     </section>
