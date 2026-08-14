@@ -6,6 +6,7 @@ import ScanView from '@/views/ScanView.vue'
 import ProdukView from '@/views/ProdukView.vue'
 import ProdukIndex from '@/views/produk/index.vue'
 import Login from '@/views/Login.vue'
+import WarungProfile from '@/views/WarungProfile.vue'
 import { auth } from '@/firebase'
 import { authReady } from '@/auth'
 
@@ -16,6 +17,12 @@ const routes = [
     name: 'Welcome',
     component: Welcome,
     meta: { title: 'Home' },
+  },
+  {
+    path: '/profil-warung',
+    name: 'Profil Warung',
+    component: WarungProfile,
+    meta: { title: 'Profil Warung' },
   },
   {
     path: '/scan',
