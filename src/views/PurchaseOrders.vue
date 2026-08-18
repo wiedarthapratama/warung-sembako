@@ -14,11 +14,13 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { addDoc, collection, doc, getDocs, runTransaction, updateDoc } from 'firebase/firestore'
 import Swal from 'sweetalert2'
 import { db } from '@/firebase'
 import { authState } from '@/auth'
 
+const router = useRouter()
 const orders = ref<any[]>([])
 const products = ref<any[]>([])
 const loading = ref(true)
@@ -42,8 +44,8 @@ const applyProduct = (item: any) => { const product = getProduct(item); if (prod
 const basePath = () => `warungs/${authState.warungId}`
 
 const loadData = async () => { if (!authState.warungId) return; loading.value = true; try { const [productSnapshot, orderSnapshot] = await Promise.all([getDocs(collection(db, basePath(), 'produk')), getDocs(collection(db, basePath(), 'purchaseOrders'))]); products.value = productSnapshot.docs.map((item) => ({ id: item.id, ...item.data() })); orders.value = orderSnapshot.docs.map((item) => ({ id: item.id, ...item.data() } as any)).sort((a: any, b: any) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''))) } finally { loading.value = false } }
-const openForm = () => { editingOrder.value = null; form.value = { tanggal: new Date().toISOString().slice(0, 10), pemasok: '', catatan: '', items: [] }; addItem(); showForm.value = true }
-const editOrder = (order: any) => { editingOrder.value = order; form.value = { tanggal: order.tanggal, pemasok: order.pemasok || '', catatan: order.catatan || '', items: order.items.map((item: any) => ({ ...item, key: `${Date.now()}-${Math.random()}` })) }; showForm.value = true }
+const openForm = () => router.push('/pembelian/baru')
+const editOrder = (order: any) => router.push(`/pembelian/${order.id}/edit`)
 const closeForm = () => { showForm.value = false; editingOrder.value = null }
 const saveOrder = async () => { if (!authState.warungId || form.value.items.some((item: any) => !item.produkId || item.jumlah < 1)) return; saving.value = true; try { const items = form.value.items.map((item: any) => { const product = getProduct(item); return { produkId: product.id, nama: product.nama, satuan: product.satuan, unitPerSatuan: Number(product.unit) || 1, jumlah: Number(item.jumlah), hargaSatuan: Number(item.hargaSatuan), subtotal: Number(item.jumlah) * Number(item.hargaSatuan) } }); const payload = { tanggal: form.value.tanggal, pemasok: form.value.pemasok.trim(), catatan: form.value.catatan.trim(), items, total: formTotal.value, status: 'draft', createdAt: editingOrder.value?.createdAt || new Date().toISOString(), updatedAt: new Date().toISOString() }; if (editingOrder.value) await updateDoc(doc(db, basePath(), 'purchaseOrders', editingOrder.value.id), payload); else await addDoc(collection(db, basePath(), 'purchaseOrders'), payload); closeForm(); await loadData(); await Swal.fire({ title: 'Draft tersimpan', icon: 'success', timer: 1300, showConfirmButton: false }) } finally { saving.value = false } }
 const lockOrder = async (order: any) => { const confirm = await Swal.fire({ title: 'Kunci purchase order?', text: 'Setelah dikunci, PO tidak dapat diedit dan stok akan bertambah dalam pcs.', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, kunci transaksi', cancelButtonText: 'Batal', confirmButtonColor: '#2563eb' }); if (!confirm.isConfirmed || !authState.warungId) return; try { await runTransaction(db, async (transaction) => { const orderRef = doc(db, basePath(), 'purchaseOrders', order.id); const fresh = await transaction.get(orderRef); if (!fresh.exists() || fresh.data().status === 'locked') return; for (const item of order.items) { const productRef = doc(db, basePath(), 'produk', item.produkId); const product = await transaction.get(productRef); const currentStock = Number(product.data()?.stokPcs) || 0; transaction.update(productRef, { stokPcs: currentStock + (Number(item.jumlah) * Number(item.unitPerSatuan)), updatedAt: new Date().toISOString() }) } transaction.update(orderRef, { status: 'locked', lockedAt: new Date().toISOString() }) }); await loadData(); await Swal.fire({ title: 'Transaksi dikunci', text: 'Stok produk berhasil diperbarui.', icon: 'success', confirmButtonColor: '#2563eb' }) } catch (error: any) { await Swal.fire({ title: 'Gagal mengunci PO', text: error?.message || 'Coba lagi.', icon: 'error', confirmButtonColor: '#2563eb' }) } }
