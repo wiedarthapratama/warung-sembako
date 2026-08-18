@@ -26,6 +26,14 @@
           <span class="nav-icon">▦</span>
           <span>Produk</span>
         </RouterLink>
+        <RouterLink to="/pembelian" class="nav-link" active-class="nav-link-active" @click="sidebarOpen = false">
+          <span class="nav-icon">↙</span>
+          <span>Pembelian</span>
+        </RouterLink>
+        <RouterLink to="/stok" class="nav-link" active-class="nav-link-active" @click="sidebarOpen = false">
+          <span class="nav-icon">▤</span>
+          <span>Stok</span>
+        </RouterLink>
       </nav>
 
       <div class="sidebar-bottom">

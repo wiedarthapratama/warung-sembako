@@ -7,6 +7,8 @@ import ProdukView from '@/views/ProdukView.vue'
 import ProdukIndex from '@/views/produk/index.vue'
 import Login from '@/views/Login.vue'
 import WarungProfile from '@/views/WarungProfile.vue'
+import PurchaseOrders from '@/views/PurchaseOrders.vue'
+import Stock from '@/views/Stock.vue'
 import { auth } from '@/firebase'
 import { authReady } from '@/auth'
 
@@ -30,6 +32,8 @@ const routes = [
     component: ScanView,
     meta: { title: 'Scan' },
   },
+  { path: '/pembelian', name: 'Pembelian', component: PurchaseOrders, meta: { title: 'Pembelian' } },
+  { path: '/stok', name: 'Stok', component: Stock, meta: { title: 'Stok' } },
   {
     path: '/produk-view',
     name: 'Produk View',
