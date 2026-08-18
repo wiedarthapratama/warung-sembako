@@ -1,7 +1,7 @@
 <template>
   <section class="page-stack">
     <div class="page-heading">
-      <div><p class="eyebrow">MASTER DATA</p><h1>Produk</h1><p class="page-description">Kelola katalog produk, harga, dan stok warung.</p></div>
+      <div><p class="eyebrow">MASTER DATA</p><h1>Produk</h1><p class="page-description">Kelola identitas, satuan, dan harga dasar produk warung.</p></div>
       <button class="button button-primary" type="button" @click="openForm()">＋ Tambah Produk</button>
     </div>
 
@@ -14,7 +14,7 @@
       <div v-else-if="!filteredProducts.length" class="table-state"><strong>Belum ada produk</strong><span>Tambahkan produk pertama untuk memulai katalog.</span><button class="button button-primary" @click="openForm()">Tambah Produk</button></div>
       <div v-else class="table-wrap">
         <table class="data-table">
-          <thead><tr><th>Produk</th><th>Barcode</th><th>Kategori</th><th>Stok</th><th>Harga Beli</th><th>Harga Jual</th><th class="action-heading">Aksi</th></tr></thead>
+          <thead><tr><th>Produk</th><th>Barcode</th><th>Kategori</th><th>Isi / Satuan</th><th>Harga Beli / Satuan</th><th>Harga Jual / Unit</th><th class="action-heading">Aksi</th></tr></thead>
           <tbody>
             <tr v-for="produk in filteredProducts" :key="produk.id">
               <td><div class="product-name"><span class="product-avatar">{{ (produk.nama || '?').charAt(0).toUpperCase() }}</span><div><strong>{{ produk.nama || '-' }}</strong><small>{{ produk.kategori || 'Umum' }}</small></div></div></td>
@@ -25,8 +25,8 @@
                 </div>
               </td>
               <td><span class="category-badge">{{ produk.kategori || 'Umum' }}</span></td>
-              <td><span :class="['stock-badge', Number(produk.unit) <= 5 ? 'stock-low' : 'stock-ok']">{{ produk.unit || 0 }} {{ produk.satuan || 'unit' }}</span></td>
-              <td>{{ formatRupiah(produk.hargaBeli) }}</td><td class="price-cell">{{ formatRupiah(produk.hargaJualReal || produk.hargaJualPerUnit) }}</td>
+              <td><span class="stock-badge stock-ok">{{ produk.unit || 0 }} pcs / {{ produk.satuan || 'satuan' }}</span></td>
+              <td>{{ formatRupiah(produk.hargaBeli) }}<small class="table-subtext">per {{ produk.satuan || 'satuan' }}</small></td><td class="price-cell">{{ formatRupiah(produk.hargaJualReal || produk.hargaJualPerUnit) }}<small class="table-subtext">per unit</small></td>
               <td><div class="row-actions"><button class="action-button edit-action" type="button" @click="openForm(produk)">Edit</button><button class="action-button delete-action" type="button" @click="deleteProduk(produk.id)">Hapus</button></div></td>
             </tr>
           </tbody>
