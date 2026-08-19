@@ -34,10 +34,18 @@
           <span class="nav-icon">▤</span>
           <span>Stok</span>
         </RouterLink>
+        <RouterLink to="/pos" class="nav-link" active-class="nav-link-active" @click="sidebarOpen = false">
+          <span class="nav-icon">▣</span>
+          <span>POS</span>
+        </RouterLink>
       </nav>
 
       <div class="sidebar-bottom">
         <p class="nav-label">PENGELOLAAN</p>
+        <RouterLink to="/utang" class="nav-link" active-class="nav-link-active" @click="sidebarOpen = false">
+          <span class="nav-icon">Rp</span>
+          <span>Utang</span>
+        </RouterLink>
         <button class="nav-link nav-link-button" type="button" @click="openWarungProfile">
           <span class="nav-icon">⚙</span>
           <span>Profil Warung</span>
