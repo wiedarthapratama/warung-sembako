@@ -10,6 +10,9 @@ import WarungProfile from '@/views/WarungProfile.vue'
 import PurchaseOrders from '@/views/PurchaseOrders.vue'
 import PurchaseOrderForm from '@/views/PurchaseOrderForm.vue'
 import Stock from '@/views/Stock.vue'
+import POS from '@/views/POS.vue'
+import POSForm from '@/views/POSForm.vue'
+import Debts from '@/views/Debts.vue'
 import { auth } from '@/firebase'
 import { authReady } from '@/auth'
 
@@ -37,6 +40,11 @@ const routes = [
   { path: '/pembelian/baru', name: 'Buat Pembelian', component: PurchaseOrderForm, meta: { title: 'Buat Pembelian' } },
   { path: '/pembelian/:id/edit', name: 'Edit Pembelian', component: PurchaseOrderForm, meta: { title: 'Edit Pembelian' } },
   { path: '/stok', name: 'Stok', component: Stock, meta: { title: 'Stok' } },
+  { path: '/pos', name: 'POS', component: POS, meta: { title: 'POS' } },
+  { path: '/pos/baru', name: 'Transaksi Baru', component: POSForm, meta: { title: 'Transaksi Baru' } },
+  { path: '/pos/:id', name: 'Detail Penjualan', component: POSForm, meta: { title: 'Detail Penjualan' } },
+  { path: '/pos/:id/edit', name: 'Edit Penjualan', component: POSForm, meta: { title: 'Edit Penjualan' } },
+  { path: '/utang', name: 'Utang', component: Debts, meta: { title: 'Utang' } },
   {
     path: '/produk-view',
     name: 'Produk View',
