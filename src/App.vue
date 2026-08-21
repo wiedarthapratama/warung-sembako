@@ -18,21 +18,23 @@
           <span class="nav-icon">⌂</span>
           <span>Home</span>
         </RouterLink>
-        <RouterLink to="/produk" class="nav-link" active-class="nav-link-active" @click="sidebarOpen = false">
-          <span class="nav-icon">▦</span>
-          <span>Produk</span>
-        </RouterLink>
+        <p class="nav-label">TRANSAKSI</p>
         <RouterLink to="/pembelian" class="nav-link" active-class="nav-link-active" @click="sidebarOpen = false">
           <span class="nav-icon">↙</span>
           <span>Pembelian</span>
         </RouterLink>
-        <RouterLink to="/stok" class="nav-link" active-class="nav-link-active" @click="sidebarOpen = false">
-          <span class="nav-icon">▤</span>
-          <span>Stok</span>
-        </RouterLink>
         <RouterLink to="/pos" class="nav-link" active-class="nav-link-active" @click="sidebarOpen = false">
           <span class="nav-icon">▣</span>
           <span>POS</span>
+        </RouterLink>
+        <p class="nav-label">MASTER DATA</p>
+        <RouterLink to="/produk" class="nav-link" active-class="nav-link-active" @click="sidebarOpen = false">
+          <span class="nav-icon">▦</span>
+          <span>Produk</span>
+        </RouterLink>
+        <RouterLink to="/stok" class="nav-link" active-class="nav-link-active" @click="sidebarOpen = false">
+          <span class="nav-icon">▤</span>
+          <span>Stok</span>
         </RouterLink>
       </nav>
 
