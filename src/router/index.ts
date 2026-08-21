@@ -2,7 +2,6 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 // Views
 import Welcome from '@/views/Welcome.vue'
-import ScanView from '@/views/ScanView.vue'
 import ProdukView from '@/views/ProdukView.vue'
 import ProdukIndex from '@/views/produk/index.vue'
 import Login from '@/views/Login.vue'
@@ -13,6 +12,7 @@ import Stock from '@/views/Stock.vue'
 import POS from '@/views/POS.vue'
 import POSForm from '@/views/POSForm.vue'
 import Debts from '@/views/Debts.vue'
+import Customers from '@/views/Customers.vue'
 import { auth } from '@/firebase'
 import { authReady } from '@/auth'
 
@@ -30,12 +30,6 @@ const routes = [
     component: WarungProfile,
     meta: { title: 'Profil Warung' },
   },
-  {
-    path: '/scan',
-    name: 'Scan',
-    component: ScanView,
-    meta: { title: 'Scan' },
-  },
   { path: '/pembelian', name: 'Pembelian', component: PurchaseOrders, meta: { title: 'Pembelian' } },
   { path: '/pembelian/baru', name: 'Buat Pembelian', component: PurchaseOrderForm, meta: { title: 'Buat Pembelian' } },
   { path: '/pembelian/:id/edit', name: 'Edit Pembelian', component: PurchaseOrderForm, meta: { title: 'Edit Pembelian' } },
@@ -45,6 +39,7 @@ const routes = [
   { path: '/pos/:id', name: 'Detail Penjualan', component: POSForm, meta: { title: 'Detail Penjualan' } },
   { path: '/pos/:id/edit', name: 'Edit Penjualan', component: POSForm, meta: { title: 'Edit Penjualan' } },
   { path: '/utang', name: 'Utang', component: Debts, meta: { title: 'Utang' } },
+  { path: '/pelanggan', name: 'Pelanggan', component: Customers, meta: { title: 'Pelanggan' } },
   {
     path: '/produk-view',
     name: 'Produk View',
