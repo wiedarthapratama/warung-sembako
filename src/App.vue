@@ -18,10 +18,6 @@
           <span class="nav-icon">⌂</span>
           <span>Home</span>
         </RouterLink>
-        <RouterLink to="/scan" class="nav-link" active-class="nav-link-active" @click="sidebarOpen = false">
-          <span class="nav-icon">⌕</span>
-          <span>Scan Produk</span>
-        </RouterLink>
         <RouterLink to="/produk" class="nav-link" active-class="nav-link-active" @click="sidebarOpen = false">
           <span class="nav-icon">▦</span>
           <span>Produk</span>
@@ -45,6 +41,10 @@
         <RouterLink to="/utang" class="nav-link" active-class="nav-link-active" @click="sidebarOpen = false">
           <span class="nav-icon">Rp</span>
           <span>Utang</span>
+        </RouterLink>
+        <RouterLink to="/pelanggan" class="nav-link" active-class="nav-link-active" @click="sidebarOpen = false">
+          <span class="nav-icon">◉</span>
+          <span>Pelanggan</span>
         </RouterLink>
         <button class="nav-link nav-link-button" type="button" @click="openWarungProfile">
           <span class="nav-icon">⚙</span>
