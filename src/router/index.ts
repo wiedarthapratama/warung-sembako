@@ -9,6 +9,8 @@ import WarungProfile from '@/views/WarungProfile.vue'
 import PurchaseOrders from '@/views/PurchaseOrders.vue'
 import PurchaseOrderForm from '@/views/PurchaseOrderForm.vue'
 import Stock from '@/views/Stock.vue'
+import StockOpname from '@/views/StockOpname.vue'
+import StockOpnameForm from '@/views/StockOpnameForm.vue'
 import POS from '@/views/POS.vue'
 import POSForm from '@/views/POSForm.vue'
 import Debts from '@/views/Debts.vue'
@@ -34,6 +36,9 @@ const routes = [
   { path: '/pembelian/baru', name: 'Buat Pembelian', component: PurchaseOrderForm, meta: { title: 'Buat Pembelian' } },
   { path: '/pembelian/:id/edit', name: 'Edit Pembelian', component: PurchaseOrderForm, meta: { title: 'Edit Pembelian' } },
   { path: '/stok', name: 'Stok', component: Stock, meta: { title: 'Stok' } },
+  { path: '/stok-opname', name: 'Stock Opname', component: StockOpname, meta: { title: 'Stock Opname' } },
+  { path: '/stok-opname/baru', name: 'Tambah Stock Opname', component: StockOpnameForm, meta: { title: 'Tambah Stock Opname' } },
+  { path: '/stok-opname/:id/edit', name: 'Edit Stock Opname', component: StockOpnameForm, meta: { title: 'Edit Stock Opname' } },
   { path: '/pos', name: 'POS', component: POS, meta: { title: 'POS' } },
   { path: '/pos/baru', name: 'Transaksi Baru', component: POSForm, meta: { title: 'Transaksi Baru' } },
   { path: '/pos/:id', name: 'Detail Penjualan', component: POSForm, meta: { title: 'Detail Penjualan' } },

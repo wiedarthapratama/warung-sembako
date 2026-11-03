@@ -50,3 +50,27 @@ button { cursor: pointer; }
 .edit-action { background: #eef2ff; color: #3730a3; }
 .delete-action { background: #fee2e2; color: #b91c1c; }
 @media (max-width: 960px) { .scan-body { grid-template-columns: 1fr; } }
+
+.purchase-page-form, .purchase-page-form .purchase-form-body, .purchase-page-form .purchase-items { min-width: 0; }
+.purchase-page-form .purchase-form-body { padding: clamp(14px, 3vw, 24px); }
+.purchase-page-form .purchase-item { min-width: 0; grid-template-columns: 24px minmax(150px, 1fr) minmax(95px, .7fr) minmax(140px, 1fr) minmax(90px, .7fr) 20px; }
+.purchase-page-form .purchase-item select, .purchase-page-form .purchase-item input { min-width: 0; max-width: 100%; }
+.product-search { position: relative; }
+.product-search-options { position: absolute; top: calc(100% + 4px); right: 0; left: 0; z-index: 15; max-height: 240px; overflow-y: auto; border: 1px solid #dce2ea; border-radius: 6px; background: #fff; box-shadow: 0 10px 24px #2638521c; }
+.product-search-option { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; border: 0; border-bottom: 1px solid #edf0f4; background: #fff; padding: 10px; color: #354158; text-align: left; }
+.product-search-option:last-child { border-bottom: 0; }
+.product-search-option:hover, .product-search-option-active { background: #f2f7ff; }
+.purchase-item .product-search-option span { min-width: 0; margin: 0; overflow: hidden; color: #354158; font-size: 11px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.product-search-option small { flex: 0 0 auto; color: #8792a5; font-size: 10px; }
+.product-search-empty { margin: 0; padding: 12px; color: #8792a5; font-size: 11px; }
+.purchase-add-more { display: flex; margin: 14px 0 0 auto; }
+@media (max-width: 760px) {
+  .purchase-page-form .purchase-item { grid-template-columns: 24px minmax(0, 1fr) 24px; }
+  .purchase-page-form .purchase-item .item-product,
+  .purchase-page-form .purchase-item .item-quantity,
+  .purchase-page-form .purchase-item .item-price,
+  .purchase-page-form .purchase-item .item-total { grid-column: 2 / -1; }
+  .purchase-page-form .purchase-item .item-total { padding: 0; text-align: left; }
+  .purchase-page-form .purchase-item .remove-item { grid-column: 3; grid-row: 1; }
+  .purchase-add-more { width: 100%; }
+}

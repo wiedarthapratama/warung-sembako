@@ -36,6 +36,10 @@
           <span class="nav-icon">▤</span>
           <span>Stok</span>
         </RouterLink>
+        <RouterLink to="/stok-opname" class="nav-link" active-class="nav-link-active" @click="sidebarOpen = false">
+          <span class="nav-icon">✓</span>
+          <span>Stock Opname</span>
+        </RouterLink>
       </nav>
 
       <div class="sidebar-bottom">
