@@ -48,7 +48,65 @@ const openForm = () => router.push('/pembelian/baru')
 const editOrder = (order: any) => router.push(`/pembelian/${order.id}/edit`)
 const closeForm = () => { showForm.value = false; editingOrder.value = null }
 const saveOrder = async () => { if (!authState.warungId || form.value.items.some((item: any) => !item.produkId || item.jumlah < 1)) return; saving.value = true; try { const items = form.value.items.map((item: any) => { const product = getProduct(item); return { produkId: product.id, nama: product.nama, satuan: product.satuan, unitPerSatuan: Number(product.unit) || 1, jumlah: Number(item.jumlah), hargaSatuan: Number(item.hargaSatuan), subtotal: Number(item.jumlah) * Number(item.hargaSatuan) } }); const payload = { tanggal: form.value.tanggal, pemasok: form.value.pemasok.trim(), catatan: form.value.catatan.trim(), items, total: formTotal.value, status: 'draft', createdAt: editingOrder.value?.createdAt || new Date().toISOString(), updatedAt: new Date().toISOString() }; if (editingOrder.value) await updateDoc(doc(db, basePath(), 'purchaseOrders', editingOrder.value.id), payload); else await addDoc(collection(db, basePath(), 'purchaseOrders'), payload); closeForm(); await loadData(); await Swal.fire({ title: 'Draft tersimpan', icon: 'success', timer: 1300, showConfirmButton: false }) } finally { saving.value = false } }
-const lockOrder = async (order: any) => { const confirm = await Swal.fire({ title: 'Kunci purchase order?', text: 'Setelah dikunci, PO tidak dapat diedit dan stok akan bertambah dalam pcs.', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, kunci transaksi', cancelButtonText: 'Batal', confirmButtonColor: '#2563eb' }); if (!confirm.isConfirmed || !authState.warungId) return; try { await runTransaction(db, async (transaction) => { const orderRef = doc(db, basePath(), 'purchaseOrders', order.id); const productRefs = order.items.map((item: any) => ({ item, ref: doc(db, basePath(), 'produk', item.produkId) })); const [fresh, ...productSnapshots] = await Promise.all([transaction.get(orderRef), ...productRefs.map(({ ref }: any) => transaction.get(ref))]); if (!fresh.exists() || fresh.data()?.status === 'locked') return; const lockedAt = new Date().toISOString(); productSnapshots.forEach((snapshot: any, index: number) => { const currentStock = Number(snapshot.data()?.stokPcs) || 0; const item = productRefs[index].item; transaction.update(productRefs[index].ref, { stokPcs: currentStock + (Number(item.jumlah) * Number(item.unitPerSatuan)), updatedAt: lockedAt }) }); transaction.update(orderRef, { status: 'locked', lockedAt }) }); await loadData(); await Swal.fire({ title: 'Transaksi dikunci', text: 'Stok produk berhasil diperbarui.', icon: 'success', confirmButtonColor: '#2563eb' }) } catch (error: any) { await Swal.fire({ title: 'Gagal mengunci PO', text: error?.message || 'Coba lagi.', icon: 'error', confirmButtonColor: '#2563eb' }) } }
+const lockOrder = async (order: any) => {
+  const hasUnknownConversion = order.items.some((item: any) => item.konversiBelumDiketahui)
+  const confirm = await Swal.fire({
+    title: 'Kunci purchase order?',
+    text: hasUnknownConversion
+      ? 'Jika konversi masih belum diketahui saat dikunci, stok menggunakan asumsi 1 satuan pembelian = 1 pcs. Konversi yang sudah dilengkapi di master akan digunakan. Jika konversi baru diketahui setelah PO dikunci, stok perlu dikoreksi manual.'
+      : 'Setelah dikunci, PO tidak dapat diedit dan stok akan bertambah dalam pcs.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Ya, kunci transaksi',
+    cancelButtonText: 'Batal',
+    confirmButtonColor: '#2563eb',
+  })
+  if (!confirm.isConfirmed || !authState.warungId) return
+  try {
+    await runTransaction(db, async (transaction) => {
+      const orderRef = doc(db, basePath(), 'purchaseOrders', order.id)
+      const fresh = await transaction.get(orderRef)
+      if (!fresh.exists() || fresh.data()?.status === 'locked') return
+      const freshItems = (fresh.data()?.items || []) as any[]
+      if (!freshItems.length) throw new Error('Purchase order tidak memiliki barang.')
+      const groupedItems = new Map<string, { ref: ReturnType<typeof doc>; lines: { item: any; index: number }[] }>()
+      freshItems.forEach((item, index) => {
+        const group = groupedItems.get(item.produkId) || { ref: doc(db, basePath(), 'produk', item.produkId), lines: [] }
+        group.lines.push({ item, index })
+        groupedItems.set(item.produkId, group)
+      })
+      const productRefs = [...groupedItems.values()]
+      const productSnapshots = await Promise.all(productRefs.map(({ ref }) => transaction.get(ref)))
+      const lockedAt = new Date().toISOString()
+      const lockedItems = [...freshItems]
+      productSnapshots.forEach((snapshot: any, index: number) => {
+        const { lines, ref } = productRefs[index]
+        if (!snapshot.exists()) throw new Error(`Produk ${lines[0].item.nama || lines[0].item.produkId} tidak ditemukan.`)
+        const currentStock = Number(snapshot.data()?.stokPcs) || 0
+        const currentUnit = Number(snapshot.data()?.unit)
+        let addedStock = 0
+        let correctionNeeded = false
+        for (const { item, index: itemIndex } of lines) {
+          const conversionUnknown = Boolean(item.konversiBelumDiketahui && !(currentUnit > 0))
+          const unitPerSatuan = item.konversiBelumDiketahui && currentUnit > 0 ? currentUnit : Number(item.unitPerSatuan) || 1
+          addedStock += Number(item.jumlah) * unitPerSatuan
+          correctionNeeded ||= conversionUnknown
+          lockedItems[itemIndex] = { ...item, unitPerSatuan, konversiBelumDiketahui: conversionUnknown }
+        }
+        transaction.update(ref, {
+          stokPcs: currentStock + addedStock,
+          ...(correctionNeeded ? { koreksiStokManual: true } : {}),
+          updatedAt: lockedAt,
+        })
+      })
+      transaction.update(orderRef, { items: lockedItems, status: 'locked', lockedAt })
+    })
+    await loadData()
+    await Swal.fire({ title: 'Transaksi dikunci', text: hasUnknownConversion ? 'Konversi yang belum diketahui memakai asumsi 1 satuan = 1 pcs. Jika baru dilengkapi setelah ini, lakukan koreksi stok manual.' : 'Stok produk berhasil diperbarui.', icon: 'success', confirmButtonColor: '#2563eb' })
+  } catch (error: any) {
+    await Swal.fire({ title: 'Gagal mengunci PO', text: error?.message || 'Coba lagi.', icon: 'error', confirmButtonColor: '#2563eb' })
+  }
+}
 const viewOrder = (order: any) => { detailOrder.value = order }
 const printReceipt = () => window.print()
 onMounted(loadData)

@@ -17,7 +17,7 @@
           <thead><tr><th>Produk</th><th>Barcode</th><th>Kategori</th><th>Isi / Satuan</th><th>Harga Beli / Satuan</th><th>Harga Jual / Unit</th><th class="action-heading">Aksi</th></tr></thead>
           <tbody>
             <tr v-for="produk in filteredProducts" :key="produk.id">
-              <td><div class="product-name"><span class="product-avatar">{{ (produk.nama || '?').charAt(0).toUpperCase() }}</span><div><strong>{{ produk.nama || '-' }}</strong><small>{{ produk.kategori || 'Umum' }}</small></div></div></td>
+              <td><div class="product-name"><span class="product-avatar">{{ (produk.nama || '?').charAt(0).toUpperCase() }}</span><div><strong>{{ produk.nama || '-' }}</strong><small>{{ produk.kategori || 'Umum' }}</small><span v-if="produk.perluDilengkapi" class="product-incomplete-badge">Belum lengkap</span><span v-if="produk.koreksiStokManual" class="stock-correction-badge">Perlu koreksi stok manual</span></div></div></td>
               <td>
                 <div class="barcode-cell">
                   <div class="barcode-label">{{ produk.barcode || 'Tanpa barcode' }}</div>
@@ -25,7 +25,7 @@
                 </div>
               </td>
               <td><span class="category-badge">{{ produk.kategori || 'Umum' }}</span></td>
-              <td><span class="stock-badge stock-ok">{{ produk.unit || 0 }} pcs / {{ produk.satuan || 'satuan' }}</span></td>
+              <td><span v-if="produk.unit" class="stock-badge stock-ok">{{ produk.unit }} pcs / {{ produk.satuan || 'satuan' }}</span><span v-else class="product-incomplete-badge">Isi belum diatur</span></td>
               <td>{{ formatRupiah(produk.hargaBeli) }}<small class="table-subtext">per {{ produk.satuan || 'satuan' }}</small></td><td class="price-cell">{{ formatRupiah(produk.hargaJualReal || produk.hargaJualPerUnit) }}<small class="table-subtext">per unit</small></td>
               <td><div class="row-actions"><button class="action-button edit-action" type="button" @click="openForm(produk)">Edit</button><button class="action-button delete-action" type="button" @click="deleteProduk(produk.id)">Hapus</button></div></td>
             </tr>
@@ -41,7 +41,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { collection, deleteDoc, doc, getDocs } from 'firebase/firestore'
+import { collection, doc, getDocs, writeBatch } from 'firebase/firestore'
 import Swal from 'sweetalert2'
 import JsBarcode from 'jsbarcode'
 import { db } from '@/firebase'
@@ -74,7 +74,10 @@ const deleteProduk = async (id: string) => {
   const result = await Swal.fire({ title: 'Hapus produk ini?', text: 'Data yang dihapus tidak dapat dikembalikan.', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, hapus', cancelButtonText: 'Batal', confirmButtonColor: '#dc2626', reverseButtons: true })
   if (!result.isConfirmed) return
   if (!authState.warungId) return
-  await deleteDoc(doc(db, 'warungs', authState.warungId, 'produk', id))
+  const batch = writeBatch(db)
+  batch.delete(doc(db, 'warungs', authState.warungId, 'produk', id))
+  batch.delete(doc(db, 'warungs', authState.warungId, 'purchaseOrderQueue', id))
+  await batch.commit()
   await loadProduk()
   await Swal.fire({ title: 'Produk dihapus', text: 'Produk berhasil dihapus dari katalog.', icon: 'success', confirmButtonColor: '#2563eb' })
 }
