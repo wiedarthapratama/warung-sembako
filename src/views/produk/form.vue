@@ -8,7 +8,15 @@
         <div class="form-section"><h3>Harga Produk</h3><p class="section-help">Harga beli dicatat per {{ form.satuan || 'satuan pembelian' }}. Harga jual digunakan sebagai harga tetap per pcs saat transaksi.</p><div class="form-grid"><label class="field"><span>Total Harga Beli / Satuan</span><input :value="formatCurrency(form.hargaBeli)" inputmode="numeric" @input="updateNumber('hargaBeli', $event)" /><small class="field-help">Contoh: harga beli 1 renceng.</small></label><label class="field"><span>Harga Jual / Unit</span><input :value="formatCurrency(form.hargaJualReal)" inputmode="numeric" @input="updateNumber('hargaJualReal', $event)" /><small class="field-help">Harga jual tetap per pcs untuk transaksi.</small></label><label class="field"><span>Harga Beli / Unit</span><input :value="formatCurrency(form.hargaBeliPerUnit)" disabled /><small class="field-help">Total harga beli ÷ isi per satuan.</small></label><label class="field"><span>Harga Jual / Unit (Rumus)</span><input :value="formatCurrency(form.hargaJualPerUnit)" disabled /><small class="field-help">Nilai referensi berdasarkan rumus margin.</small></label></div></div>
         <label class="prepare-product-option"><input v-model="prepareForPurchase" type="checkbox" /><span><strong>Siapkan untuk Purchase Order berikutnya</strong><small>Produk ini akan muncul di daftar persiapan saat membuat PO dan tetap tersimpan sampai dipakai.</small></span></label>
         <label v-if="editData?.koreksiStokManual" class="prepare-product-option stock-correction-option"><input v-model="stockCorrectionConfirmed" type="checkbox" /><span><strong>Koreksi stok manual sudah dilakukan</strong><small>Centang setelah stok disesuaikan dengan konversi isi per satuan yang sebenarnya.</small></span></label>
-        <div v-if="showScanner" class="scanner-overlay"><div class="scanner-card"><h3>Scan Barcode</h3><p>Arahkan kamera ke barcode produk.</p><video ref="videoRef"></video><button type="button" class="button button-secondary" @click="stopScanner">Tutup Kamera</button></div></div>
+        <div v-if="showScanner" class="scanner-overlay" @click.self="stopScanner">
+          <div class="scanner-card">
+            <h3>Scan Barcode</h3>
+            <p>Arahkan kamera ke barcode produk.</p>
+            <video ref="videoRef" autoplay muted playsinline></video>
+            <p v-if="scannerMessage" class="scanner-error" role="alert">{{ scannerMessage }}</p>
+            <button type="button" class="button button-secondary" @click="stopScanner">Tutup Kamera</button>
+          </div>
+        </div>
         <footer class="modal-footer"><button class="button button-secondary" type="button" @click="$emit('close')">Batal</button><button class="button button-primary" type="submit" :disabled="loading">{{ loading ? 'Menyimpan...' : editData ? 'Simpan Perubahan' : 'Tambah Produk' }}</button></footer>
       </form>
     </section>
@@ -16,9 +24,10 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, nextTick, ref, watch } from 'vue'
 import { collection, doc, getDoc, writeBatch } from 'firebase/firestore'
 import { BrowserMultiFormatReader } from '@zxing/browser'
+import type { IScannerControls } from '@zxing/browser'
 import Swal from 'sweetalert2'
 import { db } from '@/firebase'
 import { authState } from '@/auth'
@@ -30,8 +39,11 @@ const loading = ref(false)
 const prepareForPurchase = ref(false)
 const stockCorrectionConfirmed = ref(false)
 const showScanner = ref(false)
+const scannerStarting = ref(false)
+const scannerMessage = ref('')
 const videoRef = ref<HTMLVideoElement | null>(null)
-let codeReader: BrowserMultiFormatReader | null = null
+let scannerControls: IScannerControls | null = null
+let scannerSession = 0
 
 watch([() => form.value.hargaBeli, () => form.value.unit], () => { form.value.hargaBeliPerUnit = form.value.unit > 0 ? Math.round(form.value.hargaBeli / form.value.unit) : 0; form.value.hargaJualPerUnit = Math.round(form.value.hargaBeliPerUnit * 1.15) })
 const saveProduk = async () => {
@@ -61,13 +73,62 @@ const saveProduk = async () => {
 const formatCurrency = (value: number) => value ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(value) : ''
 type NumericField = 'hargaBeli' | 'hargaJualReal'
 const updateNumber = (field: NumericField, event: Event) => { const raw = (event.target as HTMLInputElement).value.replace(/[^\d]/g, ''); form.value[field] = raw ? Number(raw) : 0 }
-const startScanner = async () => { showScanner.value = true; codeReader = new BrowserMultiFormatReader(); try { const devices = await BrowserMultiFormatReader.listVideoInputDevices(); if (devices[0] && videoRef.value) codeReader.decodeFromVideoDevice(devices[0].deviceId, videoRef.value, (result) => { if (result) { form.value.barcode = result.getText(); stopScanner() } }) } catch { showScanner.value = false; window.alert('Kamera tidak dapat diakses.') } }
+const startScanner = async () => {
+  if (scannerControls || scannerStarting.value) return
+  scannerMessage.value = ''
+  if (!navigator.mediaDevices?.getUserMedia) {
+    showScanner.value = true
+    scannerMessage.value = 'Pemindaian kamera memerlukan koneksi HTTPS dan browser yang mendukung kamera.'
+    return
+  }
+  scannerStarting.value = true
+  const session = ++scannerSession
+  showScanner.value = true
+  await nextTick()
+  const video = videoRef.value
+  if (!video || session !== scannerSession) {
+    scannerStarting.value = false
+    return
+  }
+  try {
+    const reader = new BrowserMultiFormatReader()
+    const controls = await reader.decodeFromVideoDevice(undefined, video, (result) => {
+      if (result && session === scannerSession) {
+        form.value.barcode = result.getText()
+        stopScanner()
+      }
+    })
+    if (session !== scannerSession) {
+      controls.stop()
+      return
+    }
+    scannerControls = controls
+  } catch (error) {
+    if (session !== scannerSession) return
+    const name = error instanceof Error ? error.name : ''
+    scannerMessage.value = name === 'NotAllowedError'
+      ? 'Izin kamera ditolak. Izinkan akses kamera di browser lalu coba lagi.'
+      : name === 'NotFoundError' || name === 'OverconstrainedError'
+        ? 'Kamera tidak ditemukan atau tidak tersedia.'
+        : name === 'NotReadableError'
+          ? 'Kamera sedang digunakan aplikasi lain. Tutup aplikasi tersebut lalu coba lagi.'
+          : error instanceof Error
+            ? `Kamera tidak dapat dibuka: ${error.message}`
+            : 'Kamera tidak dapat dibuka. Periksa izin kamera dan coba lagi.'
+  } finally {
+    scannerStarting.value = false
+  }
+}
 const stopScanner = () => {
+  scannerSession += 1
+  scannerControls?.stop()
+  scannerControls = null
   const stream = videoRef.value?.srcObject as MediaStream | null
   stream?.getTracks().forEach((track) => track.stop())
   if (videoRef.value) videoRef.value.srcObject = null
   showScanner.value = false
 }
+onBeforeUnmount(stopScanner)
 onMounted(async () => {
   if (props.editData) {
     form.value = { ...form.value, ...props.editData }
