@@ -52,6 +52,10 @@
           <span class="nav-icon">◉</span>
           <span>Pelanggan</span>
         </RouterLink>
+        <RouterLink to="/supplier" class="nav-link" active-class="nav-link-active" @click="sidebarOpen = false">
+          <span class="nav-icon">◉</span>
+          <span>Supplier</span>
+        </RouterLink>
         <button class="nav-link nav-link-button" type="button" @click="openWarungProfile">
           <span class="nav-icon">⚙</span>
           <span>Profil Warung</span>

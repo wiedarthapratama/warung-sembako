@@ -11,12 +11,43 @@
         <label class="opname-filter"><span class="sr-only">Filter status</span><select v-model="statusFilter"><option value="all">Semua status</option><option value="draft">Draft</option><option value="locked">Terkunci</option></select></label>
       </div>
       <div v-if="loading" class="table-state">Memuat stock opname...</div>
-      <div v-else-if="!filteredOpnames.length" class="table-state"><strong>Belum ada stock opname</strong><span>Buat pencatatan untuk mulai menyesuaikan stok fisik.</span><button class="button button-primary" type="button" @click="router.push('/stok-opname/baru')">Tambah Stock Opname</button></div>
+      <div v-else-if="!opnames.length" class="table-state"><strong>Belum ada stock opname</strong><span>Buat pencatatan untuk mulai menyesuaikan stok fisik.</span><button class="button button-primary" type="button" @click="router.push('/stok-opname/baru')">Tambah Stock Opname</button></div>
       <div v-else class="table-wrap">
+        <div class="data-table-controls">
+          <label class="data-table-page-size">
+            Tampilkan
+            <select v-model.number="pageSize" aria-label="Jumlah stock opname per halaman">
+              <option :value="10">10</option>
+              <option :value="20">20</option>
+              <option :value="50">50</option>
+              <option :value="100">100</option>
+            </select>
+          </label>
+          <label class="data-table-global-search">
+            Cari di semua kolom
+            <input v-model="globalSearch" type="search" placeholder="Cari..." aria-label="Cari di semua kolom" />
+          </label>
+        </div>
         <table class="data-table">
-          <thead><tr><th>Tanggal</th><th>Keterangan</th><th>Produk dan Stok Real</th><th>Status</th><th>Aksi</th></tr></thead>
+          <thead>
+            <tr>
+              <th v-for="column in columns" :key="column.key" :aria-sort="sortColumn === column.key ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'">
+                <button class="data-table-sort" type="button" @click="toggleSort(column.key)">
+                  {{ column.label }} <span>{{ sortColumn === column.key ? (sortDirection === 'asc' ? '▲' : '▼') : '↕' }}</span>
+                </button>
+              </th>
+              <th>Aksi</th>
+            </tr>
+            <tr class="data-table-column-filters">
+              <th><input v-model="filters.tanggal" aria-label="Filter tanggal" placeholder="Filter tanggal" /></th>
+              <th><input v-model="filters.keterangan" aria-label="Filter keterangan" placeholder="Filter keterangan" /></th>
+              <th><input v-model="filters.produk" aria-label="Filter produk dan stok real" placeholder="Filter produk/stok" /></th>
+              <th><select v-model="filters.status" aria-label="Filter status"><option value="">Semua status</option><option value="draft">Draft</option><option value="locked">Terkunci</option></select></th>
+              <th></th>
+            </tr>
+          </thead>
           <tbody>
-            <tr v-for="opname in filteredOpnames" :key="opname.id">
+            <tr v-for="opname in paginatedOpnames" :key="opname.id">
               <td>{{ formatDate(opname.tanggal) }}</td>
               <td>{{ opname.keterangan || '-' }}</td>
               <td><div class="opname-products"><div v-for="item in opname.items" :key="item.produkId"><strong>{{ item.nama || 'Produk' }}</strong><small>{{ item.stokReal }} pcs</small></div></div></td>
@@ -30,15 +61,26 @@
                 </div>
               </td>
             </tr>
+            <tr v-if="!paginatedOpnames.length">
+              <td colspan="5" class="empty-cell">Tidak ada stock opname yang cocok dengan filter.</td>
+            </tr>
           </tbody>
         </table>
+        <div class="data-table-footer">
+          <p>Menampilkan {{ firstVisibleOpname }}–{{ lastVisibleOpname }} dari {{ filteredOpnames.length }} pencatatan</p>
+          <div class="data-table-pagination">
+            <button type="button" :disabled="currentPage <= 1" @click="currentPage--">Sebelumnya</button>
+            <span>Halaman {{ totalPages ? currentPage : 0 }} dari {{ totalPages }}</span>
+            <button type="button" :disabled="currentPage >= totalPages" @click="currentPage++">Berikutnya</button>
+          </div>
+        </div>
       </div>
     </section>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { collection, doc, getDocs, runTransaction } from 'firebase/firestore'
 import Swal from 'sweetalert2'
@@ -52,7 +94,58 @@ type StockOpname = { id: string; tanggal: string; keterangan?: string; items: Op
 const opnames = ref<StockOpname[]>([])
 const loading = ref(true)
 const statusFilter = ref('all')
-const filteredOpnames = computed(() => statusFilter.value === 'all' ? opnames.value : opnames.value.filter((opname) => opname.status === statusFilter.value))
+const filters = reactive({ tanggal: '', keterangan: '', produk: '', status: '' })
+const globalSearch = ref('')
+const sortColumn = ref<'tanggal' | 'keterangan' | 'produk' | 'status'>('produk')
+const sortDirection = ref<'asc' | 'desc'>('asc')
+const pageSize = ref(10)
+const currentPage = ref(1)
+const columns = [
+  { key: 'tanggal', label: 'Tanggal' },
+  { key: 'keterangan', label: 'Keterangan' },
+  { key: 'produk', label: 'Produk dan Stok Real' },
+  { key: 'status', label: 'Status' },
+] as const
+
+const getOpnameColumnValue = (opname: StockOpname, column: typeof sortColumn.value): string => {
+  switch (column) {
+    case 'tanggal': return opname.tanggal || ''
+    case 'keterangan': return opname.keterangan || '-'
+    case 'produk': return opname.items.map((item) => `${item.nama || 'Produk'} ${item.stokReal} pcs`).join(' ')
+    case 'status': return opname.status === 'locked' ? 'Terkunci' : 'Draft'
+  }
+}
+
+const filteredOpnames = computed(() => opnames.value.filter((opname) => {
+  if (statusFilter.value !== 'all' && opname.status !== statusFilter.value) return false
+  const search = globalSearch.value.trim().toLocaleLowerCase('id-ID')
+  if (search && !columns.some(({ key }) => getOpnameColumnValue(opname, key).toLocaleLowerCase('id-ID').includes(search))) return false
+  return columns.every(({ key }) => {
+    const filter = filters[key].trim().toLocaleLowerCase('id-ID')
+    if (!filter) return true
+    if (key === 'status') return opname.status === filter
+    return getOpnameColumnValue(opname, key).toLocaleLowerCase('id-ID').includes(filter)
+  })
+}))
+const sortedOpnames = computed(() => [...filteredOpnames.value].sort((a, b) => {
+  const comparison = sortColumn.value === 'tanggal'
+    ? String(a.tanggal || '').localeCompare(String(b.tanggal || ''), 'id-ID', { numeric: true })
+    : getOpnameColumnValue(a, sortColumn.value).localeCompare(getOpnameColumnValue(b, sortColumn.value), 'id-ID', { numeric: true, sensitivity: 'base' })
+  return sortDirection.value === 'asc' ? comparison : -comparison
+}))
+const totalPages = computed(() => Math.ceil(sortedOpnames.value.length / pageSize.value))
+const paginatedOpnames = computed(() => sortedOpnames.value.slice((currentPage.value - 1) * pageSize.value, currentPage.value * pageSize.value))
+const firstVisibleOpname = computed(() => sortedOpnames.value.length ? (currentPage.value - 1) * pageSize.value + 1 : 0)
+const lastVisibleOpname = computed(() => Math.min(currentPage.value * pageSize.value, sortedOpnames.value.length))
+
+watch([filters, globalSearch, statusFilter, pageSize], () => { currentPage.value = 1 })
+watch(totalPages, (pages) => { if (currentPage.value > pages) currentPage.value = pages || 1 })
+
+const toggleSort = (column: typeof sortColumn.value) => {
+  if (sortColumn.value === column) sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
+  else { sortColumn.value = column; sortDirection.value = 'asc' }
+  currentPage.value = 1
+}
 const basePath = () => `warungs/${authState.warungId}`
 
 const loadOpnames = async () => {
@@ -64,7 +157,7 @@ const loadOpnames = async () => {
       const data = item.data()
       const items: OpnameItem[] = Array.isArray(data.items) ? data.items : data.produkId ? [{ produkId: data.produkId, nama: data.namaProduk, stokReal: data.stokReal }] : []
       return { id: item.id, tanggal: data.tanggal || '', keterangan: data.keterangan || '', items, status: data.status === 'draft' ? 'draft' : 'locked', createdAt: data.createdAt || '' }
-    }).sort((first, second) => String(second.createdAt || '').localeCompare(String(first.createdAt || '')))
+    })
   } finally {
     loading.value = false
   }

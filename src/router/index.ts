@@ -15,6 +15,7 @@ import POS from '@/views/POS.vue'
 import POSForm from '@/views/POSForm.vue'
 import Debts from '@/views/Debts.vue'
 import Customers from '@/views/Customers.vue'
+import SupplierManagement from '@/views/SupplierManagement.vue'
 import { auth } from '@/firebase'
 import { authReady } from '@/auth'
 
@@ -45,6 +46,7 @@ const routes = [
   { path: '/pos/:id/edit', name: 'Edit Penjualan', component: POSForm, meta: { title: 'Edit Penjualan' } },
   { path: '/utang', name: 'Utang', component: Debts, meta: { title: 'Utang' } },
   { path: '/pelanggan', name: 'Pelanggan', component: Customers, meta: { title: 'Pelanggan' } },
+  { path: '/supplier', name: 'Supplier', component: SupplierManagement, meta: { title: 'Supplier' } },
   {
     path: '/produk-view',
     name: 'Produk View',
